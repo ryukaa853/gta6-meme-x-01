@@ -10,7 +10,7 @@
 // Outside the grader's container, MAKEFUN_BOT_DIR and MAKEFUN_OUTPUT_DIR stand in for /bot and /output:
 //   mkdir -p out && MAKEFUN_BOT_DIR=. MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BOT_DIR = process.env.MAKEFUN_BOT_DIR ?? '/bot';
@@ -23,3 +23,17 @@ try {
   console.error(`POST.json could not be copied from ${BOT_DIR}: ${(err as Error).message}`);
   process.exit(1);
 }
+
+// Read back what was handed in and check it names a real post before the gate sees it.
+let post;
+try {
+  post = JSON.parse(readFileSync(join(OUTPUT_DIR, 'POST.json'), 'utf8'));
+} catch (err) {
+  console.error(`POST.json in ${OUTPUT_DIR} could not be read or parsed: ${(err as Error).message}`);
+  process.exit(1);
+}
+if (typeof post !== 'object' || post === null || typeof post.url !== 'string' || !post.url.startsWith('https://')) {
+  console.error('POST.json is invalid: it must be an object with a "url" string starting with "https://".');
+  process.exit(1);
+}
+console.log(`Handing in post: ${post.url}`);
